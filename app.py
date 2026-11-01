@@ -44,9 +44,23 @@ def resources():
     return load_model(token)
 
 
+def clear_text():
+    st.session_state.text = ""
+
+
 with st.form("check"):
-    text = st.text_area("Your text", height=280, placeholder="Paste an essay, email, review or article…", max_chars=120_000)
-    submitted = st.form_submit_button("Check text", type="primary", use_container_width=True)
+    text = st.text_area(
+        "Your text",
+        key="text",
+        height=280,
+        placeholder="Paste an essay, email, review or article…",
+        max_chars=120_000,
+    )
+    col_check, col_new = st.columns([3, 1])
+    with col_check:
+        submitted = st.form_submit_button("Check text", type="primary", use_container_width=True)
+    with col_new:
+        st.form_submit_button("New text", on_click=clear_text, use_container_width=True)
 
 if submitted:
     if not text.strip():
