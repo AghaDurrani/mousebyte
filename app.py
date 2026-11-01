@@ -7,7 +7,7 @@ import streamlit as st
 
 from predict import load_model, predict
 
-st.set_page_config(page_title="Pangram · Text check", page_icon="🔎", layout="centered")
+st.set_page_config(page_title="Pangram · AI check", page_icon="🔎", layout="centered")
 
 
 def secret(name):
@@ -20,7 +20,7 @@ def secret(name):
 
 
 st.title("Text check")
-st.write("Paste a passage to try your AI-text detector.")
+st.write("Paste a passage to try this AI-text detector.")
 
 password = secret("APP_PASSWORD")
 if password and not st.session_state.get("authenticated", False):
@@ -69,6 +69,5 @@ if submitted:
             st.error("The model could not load or finish this request. Check the app logs and Hugging Face access, then try again.")
             # Avoid displaying tracebacks or credentials in the public interface.
 
-st.caption("An experimental model score, not proof of authorship. Text is not saved by this app.")
 with st.expander("About this test"):
     st.write("Checkpoint 4925 · CPU inference · up to 16,384 tokens. Your full input is scored together; longer text is rejected rather than silently cut off. Long passages can take a while on CPU.")
