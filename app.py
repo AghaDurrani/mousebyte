@@ -84,4 +84,5 @@ if submitted:
             # Avoid displaying tracebacks or credentials in the public interface.
 
 with st.expander("About this test"):
-    st.write("Checkpoint 4925 · CPU inference · up to 16,384 tokens. Your full input is scored together; longer text is rejected rather than silently cut off. Long passages can take a while on CPU.")
+    st.write("Gemma 3 270M · checkpoint 5000 · CPU inference · up to 16,384 tokens. Your full input is scored together; longer text is rejected rather than silently cut off. Long passages can take a while on CPU.")
+
