@@ -61,3 +61,78 @@ def predict(text, resources):
         score = model(inputs.input_ids, inputs.attention_mask).float().sigmoid().item()
     return score, count
 
+
+def smooth_labels(logits, penalty=2.0):
+    """Best binary path: sum logistic losses + penalty per label change."""
+    import math
+    if penalty < 0 or not math.isfinite(penalty):
+        raise ValueError("Use a finite, nonnegative transition penalty.")
+    if not logits:
+        return []
+    costs = [0.0, 0.0]  # No preference for the first label.
+    parents = []
+    for z in logits:
+        if not math.isfinite(z):
+            raise ValueError("Non-finite token score.")
+        softplus = max(z, 0) + math.log1p(math.exp(-abs(z)))
+        emissions = [softplus, softplus - z]
+        previous = [min(range(2), key=lambda p: costs[p] + penalty * (p != state))
+                    for state in range(2)]
+        costs = [costs[previous[s]] + penalty * (previous[s] != s) + emissions[s]
+                 for s in range(2)]
+        parents.append(previous)
+    state = min(range(2), key=lambda s: costs[s])
+    labels = []
+    for previous in reversed(parents):
+        labels.append(state)
+        state = previous[state]
+    return labels[::-1]
+
+
+@torch.inference_mode()
+def predict_tokens(text, resources):
+    """One backbone pass; reuse contextual states for token and document heads."""
+    model, tokenizer, preprocessing, lock = resources
+    text = preprocess(text, preprocessing)
+    if not text.strip():
+        raise ValueError("Please enter some text.")
+    inputs = tokenizer(text, return_tensors="pt", truncation=False,
+                       return_offsets_mapping=True, return_special_tokens_mask=True)
+    count = inputs.input_ids.shape[1]
+    if count > MAX_TOKENS:
+        raise ValueError(f"This text has {count:,} tokens. Please use at most {MAX_TOKENS:,}; nothing was truncated.")
+    with lock:
+        hidden = model.backbone(inputs.input_ids, inputs.attention_mask)
+        logits = model.lm_head(hidden)[0, :, 0].float()
+        mask = inputs.attention_mask.unsqueeze(-1).to(hidden.dtype)
+        pooled = (hidden * mask).sum(1) / mask.sum(1).clamp_min(1)
+        document_score = model.lm_head(pooled).float().sigmoid().item()
+    offsets = inputs.offset_mapping[0].tolist()
+    usable = [i for i, (a, b) in enumerate(offsets)
+              if b > a and not inputs.special_tokens_mask[0, i]]
+    return {"text": text, "offsets": [offsets[i] for i in usable],
+            "logits": logits[usable].tolist(), "count": count,
+            "document_score": document_score}
+
+
+def highlight_tokens(result, labels):
+    """Escape user text; offsets refer to the cleaned text actually scored."""
+    import html
+    import math
+    if len(labels) != len(result['offsets']):
+        raise ValueError("One label is required per token.")
+    parts, cursor = [], 0
+    for (start, end), z, label in zip(result['offsets'], result['logits'], labels):
+        # Some Unicode characters have multiple tokens with overlapping offsets.
+        start = max(start, cursor)
+        if end <= start:
+            continue
+        parts.append(html.escape(result['text'][cursor:start]))
+        score = 1 / (1 + math.exp(-max(-80, min(80, z))))
+        color, background = ('#991b1b', '#fee2e2') if label else ('#166534', '#dcfce7')
+        title = f"{'AI-like' if label else 'Human-like'}; raw token score {score:.1%}"
+        parts.append(f'<span title="{title}" style="color:{color};background-color:{background};">'
+                     + html.escape(result['text'][start:end]) + '</span>')
+        cursor = end
+    parts.append(html.escape(result['text'][cursor:]))
+    return '<div style="white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.9;">' + ''.join(parts) + '</div>'
