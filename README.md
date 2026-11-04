@@ -1,6 +1,6 @@
 # Pangram Streamlit tester
 
-Small CPU app using the private checkpoint `Durrani95/pangram-qwen-lora-4925`.
+Small CPU app using the private checkpoint `Durrani95/pangram-gemma270-lora-5000`.
 The backbone and checkpoint revisions are pinned. It uses the original custom
 architecture and preprocessing, with BF16 weights to keep memory usage down.
 No quantization, chunking or automatic truncation. No submitted text is saved.
@@ -23,12 +23,13 @@ Alternatively copy `.streamlit/secrets.toml.example` to
 2. At https://share.streamlit.io select **Create app**, choose that repository,
    branch `main`, entrypoint `app.py`, and Python 3.11 in Advanced settings.
 3. Paste the secrets from the example into Advanced settings > Secrets.
-   Use an HF read token with access to your private model. Set `APP_PASSWORD`
+   Use an HF read token with access to your private model and the gated
+   `google/gemma-3-270m` base model (accept Google's model terms on HF). Set `APP_PASSWORD`
    if you want the interface password-protected; an obscure URL isn't private.
 4. Deploy. Weights download on first use and are cached; cold starts take longer.
 
 The public app does not make the private model or training data public. The
-model needs about 1 GB for BF16 parameters, plus Python, tokenization and
+model needs about 540 MB for BF16 parameters, plus Python, tokenization and
 activation memory. Long inputs can exceed free-host memory or time limits;
 test shorter passages first. The app never upgrades to paid hosting.
 
