@@ -6,6 +6,7 @@ import time
 import streamlit as st
 
 from predict import load_model, predict, predict_tokens, smooth_labels, highlight_tokens
+from experimental import load_experimental, predict_experimental, STEP
 
 st.set_page_config(page_title="Pangram · AI check", page_icon="🔎", layout="centered")
 
@@ -48,7 +49,13 @@ def clear_text():
     st.session_state.text = ""
 
 
-document_tab, token_tab = st.tabs(["Document", "Token highlights"] )
+@st.cache_resource(show_spinner="Loading the experimental model…")
+def experimental_resources():
+    token = secret("HF_TOKEN") or secret("HF_TOKEN_WRITE")
+    return load_experimental(token, resources())
+
+
+document_tab, token_tab, experimental_tab = st.tabs(["Document", "Token highlights", "Experimental"])
 
 with document_tab:
     with st.form("check"):
@@ -112,6 +119,37 @@ with token_tab:
         st.caption(f"{result['count']:,} tokens · document AI score {result['document_score']:.1%}")
         st.caption("Highlights show the cleaned text from your last submission. They use the existing classifier on individual tokens; they are not calibrated token probabilities.")
 
+with experimental_tab:
+    st.caption("Human, AI or Mixed · trained document and token predictions")
+    with st.form("experimental_check"):
+        experimental_text = st.text_area("Text to classify", key="experimental_text",
+                                         height=280, max_chars=120_000)
+        experimental_submitted = st.form_submit_button("Classify text", type="primary")
+    if experimental_submitted:
+        st.session_state.pop("experimental_result", None)
+        try:
+            with st.spinner("Reading your text…"):
+                st.session_state.experimental_result = predict_experimental(
+                    experimental_text, experimental_resources())
+        except ValueError as error:
+            st.error(str(error))
+        except Exception:
+            st.error("The experimental model could not load or finish. Check Hugging Face access and the app logs.")
+    experimental_result = st.session_state.get("experimental_result")
+    if experimental_result is not None:
+        st.subheader(experimental_result["label"])
+        for column, label, score in zip(st.columns(3), ("Human", "AI", "Mixed"),
+                                        experimental_result["probabilities"]):
+            column.metric(label, f"{score:.1%}")
+        if experimental_result["label"] == "Mixed":
+            st.caption("Red = AI-like · green = human-like. Hover for token scores.")
+            labels = [int(z >= 0) for z in experimental_result["logits"]]
+            st.markdown(highlight_tokens(experimental_result, labels), unsafe_allow_html=True)
+        if experimental_result["valid_count"] < 256:
+            st.caption("For short texts, this model chooses between Human and AI; Mixed is disabled below 256 tokens.")
+        st.caption(f"Checkpoint {STEP:,} · {experimental_result['count']:,} tokens · experimental, uncalibrated scores")
+
 with st.expander("About this test"):
     st.write("Gemma 3 270M · checkpoint 5000 · CPU inference · up to 16,384 tokens. Your full input is scored together; longer text is rejected rather than silently cut off. Long passages can take a while on CPU.")
+    st.write(f"Experimental tab: separate document and token heads from checkpoint {STEP:,}. Human/AI/Mixed is chosen by the highest document score; Mixed results show raw token predictions at threshold 0.5.")
 
