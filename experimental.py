@@ -7,9 +7,9 @@ from huggingface_hub import hf_hub_download
 from gemma_model import Gemma
 from text_normalization import preprocess
 
-MODEL_REPO = "Durrani95/pangram-gemma270-dual-2508"
-MODEL_REVISION = "05ca48bd988b228dbb188b6ebbf251bc6ae6da6e"
-STEP = 2508
+MODEL_REPO = "Durrani95/pangram-gemma270-dual-triplet"
+MODEL_REVISION = "0df463cf610e21145a0b49091b6c605ccd609089"
+STEP = 3841
 MAX_TOKENS = 16_384
 CLASSES = ("Human", "AI", "Mixed")
 
@@ -57,9 +57,11 @@ def predict_experimental(text, resources):
             doc[:, 2] = float("-inf")
         probabilities = doc.softmax(1)[0].tolist()
         logits = model.token_head(hidden)[0, :, 0].float()
+    ai_token_count = int((logits[valid[0]] >= 0).sum())
+    ai_share = ai_token_count / valid_count
     offsets = inputs.offset_mapping[0].tolist()
     usable = [i for i, (a, b) in enumerate(offsets) if b > a and valid[0, i]]
     return {"text": text, "count": count, "valid_count": valid_count,
-            "probabilities": probabilities,
+            "probabilities": probabilities, "ai_share": ai_share, "ai_token_count": ai_token_count,
             "label": CLASSES[max(range(3), key=lambda i: probabilities[i])],
             "offsets": [offsets[i] for i in usable], "logits": logits[usable].tolist()}
