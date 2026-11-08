@@ -53,7 +53,7 @@ def resources():
 def highlight_pure(result):
     """Document verdict sets hue; raw AI-token score sets shade intensity."""
     is_ai = result["label"] == "AI"
-    light, dark = ((254, 226, 226), (185, 28, 28)) if is_ai else ((220, 252, 231), (21, 128, 61))
+    light, dark = ((255, 241, 242), (254, 202, 202)) if is_ai else ((240, 253, 244), (187, 247, 208))
     parts, cursor = [], 0
     for (start, end), z in zip(result["offsets"], result["logits"]):
         start = max(start, cursor)
@@ -61,7 +61,7 @@ def highlight_pure(result):
             continue
         score = 1 / (1 + math.exp(-max(-80, min(80, z))))
         rgb = tuple(round(a + score * (b - a)) for a, b in zip(light, dark))
-        foreground = "#ffffff" if score >= 0.65 else "#111827"
+        foreground = "#000000"
         parts.append(html.escape(result["text"][cursor:start]))
         parts.append(
             f'<span title="Raw AI-token score: {score:.1%}" '
@@ -72,7 +72,7 @@ def highlight_pure(result):
     parts.append(html.escape(result["text"][cursor:]))
     base = "#fee2e2" if is_ai else "#dcfce7"
     return (f'<div style="white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.9;'
-            f'background-color:{base};color:#111827;">' + "".join(parts) + "</div>")
+            f'background-color:{base};color:#000000;">' + "".join(parts) + "</div>")
 
 
 def clear_text():
