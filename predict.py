@@ -130,7 +130,7 @@ def highlight_tokens(result, labels):
         parts.append(html.escape(result['text'][cursor:start]))
         score = 1 / (1 + math.exp(-max(-80, min(80, z))))
         color, background = ('#991b1b', '#fee2e2') if label else ('#166534', '#dcfce7')
-        title = f"{'AI-like' if label else 'Human-like'}; raw token score {score:.1%}"
+        title = f"AI-token probability: {score:.1%}"
         parts.append(f'<span title="{title}" style="color:{color};background-color:{background};">'
                      + html.escape(result['text'][start:end]) + '</span>')
         cursor = end
