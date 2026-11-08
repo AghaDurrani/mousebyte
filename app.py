@@ -120,7 +120,7 @@ with token_tab:
         st.caption("Highlights show the cleaned text from your last submission. They use the existing classifier on individual tokens; they are not calibrated token probabilities.")
 
 with experimental_tab:
-    st.caption(f"Gemma 270M · experimental checkpoint {STEP}")
+    st.caption(f"Gemma 270M · share-head checkpoint {STEP}")
     with st.form("experimental_check"):
         experimental_text = st.text_area("Your text", key="experimental_text",
                                          height=280, max_chars=120_000)
@@ -145,10 +145,13 @@ with experimental_tab:
             human_col.metric("Estimated human-token share", f"{1-result['ai_share']:.1%}")
             st.progress(result["ai_share"])
             st.caption("Share of text tokens classified as AI at a 0.5 threshold; this is an estimate, not verified authorship.")
+            st.markdown(highlight_tokens(result, [int(z >= 0) for z in result["logits"]]), unsafe_allow_html=True)
+            st.caption("Red = AI-like · green = human-like")
         st.caption(f"{result['valid_count']:,} text tokens")
-        if result["valid_count"] < 256:
-            st.caption("Short inputs are classified as Human or AI; Mixed is available from 256 text tokens.")
+        if result["valid_count"] < 64:
+            st.caption("Very short passages offer limited evidence; interpret the result cautiously.")
 
 with st.expander("About this test"):
     st.write("Gemma 3 270M · checkpoint 5000 · CPU inference · up to 16,384 tokens. Your full input is scored together; longer text is rejected rather than silently cut off. Long passages can take a while on CPU.")
+
 
