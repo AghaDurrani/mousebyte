@@ -160,7 +160,7 @@ with experimental_tab:
         value=2.0, step=0.25, key="experimental_smoothing",
         help="Higher values discourage switches between Human and AI tokens. Zero turns smoothing off.",
     )
-    st.caption("Smoothing changes token highlights and token share only. The document verdict stays unchanged; moving the slider does not rerun the model.")
+    st.caption("For Mixed results, smoothing joins isolated tokens into surrounding red or green spans. Hover shows the original AI probability. The document verdict stays unchanged.")
     if experimental_submitted:
         st.session_state.pop("experimental_result", None)
         try:
@@ -194,7 +194,7 @@ with experimental_tab:
             st.progress(smoothed_share)
             st.caption(f"Unsmoothed AI-token share: {result['ai_share']:.1%}. Smoothed shares describe the highlighted labels, not verified authorship.")
             st.markdown(highlight_tokens(result, token_labels), unsafe_allow_html=True)
-            st.caption("Red = AI-like · green = human-like")
+            st.caption("Red/green follows smoothing. Hover over a token to see its original AI probability.")
         else:
             st.markdown(highlight_pure(result), unsafe_allow_html=True)
             st.caption("Document verdict sets the colour: green = Human, red = AI. Lighter shades mean lower raw AI-token scores; darker shades mean higher scores.")
