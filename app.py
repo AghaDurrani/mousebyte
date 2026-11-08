@@ -127,6 +127,12 @@ with experimental_tab:
         experimental_text = st.text_area("Your text", key="experimental_text",
                                          height=280, max_chars=120_000)
         experimental_submitted = st.form_submit_button("Check text", type="primary")
+    experimental_penalty = st.slider(
+        "Highlight smoothing", min_value=0.0, max_value=10.0,
+        value=2.0, step=0.25, key="experimental_smoothing",
+        help="Higher values discourage switches between Human and AI tokens. Zero turns smoothing off.",
+    )
+    st.caption("Smoothing changes token highlights and token share only. The document verdict stays unchanged; moving the slider does not rerun the model.")
     if experimental_submitted:
         st.session_state.pop("experimental_result", None)
         try:
@@ -152,12 +158,14 @@ with experimental_tab:
     if saved:
         st.subheader(result["label"])
         if result["label"] == "Mixed":
+            token_labels = smooth_labels(result["logits"], experimental_penalty)
+            smoothed_share = sum(token_labels) / len(token_labels)
             ai_col, human_col = st.columns(2)
-            ai_col.metric("Estimated AI-token share", f"{result['ai_share']:.1%}")
-            human_col.metric("Estimated human-token share", f"{1-result['ai_share']:.1%}")
-            st.progress(result["ai_share"])
-            st.caption("Share of text tokens classified as AI at a 0.5 threshold; this is an estimate, not verified authorship.")
-            st.markdown(highlight_tokens(result, [int(z >= 0) for z in result["logits"]]), unsafe_allow_html=True)
+            ai_col.metric("Smoothed AI-token share", f"{smoothed_share:.1%}")
+            human_col.metric("Smoothed human-token share", f"{1-smoothed_share:.1%}")
+            st.progress(smoothed_share)
+            st.caption(f"Unsmoothed AI-token share: {result['ai_share']:.1%}. Smoothed shares describe the highlighted labels, not verified authorship.")
+            st.markdown(highlight_tokens(result, token_labels), unsafe_allow_html=True)
             st.caption("Red = AI-like · green = human-like")
         st.caption(f"{result['valid_count']:,} text tokens")
         if result["valid_count"] < 64:
