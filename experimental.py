@@ -9,8 +9,8 @@ from gemma_model import Gemma
 from text_normalization import preprocess
 
 MODEL_REPO = "Durrani95/pangram-gemma270-share"
-MODEL_REVISION = "3b29d72760b3aa75a40034f00a09b092777e166a"
-STEP = 3245
+MODEL_REVISION = "fdcc8db8df21e506dac8c985bb42913ce486a6c8"
+STEP = 3896
 MAX_TOKENS = 16_384
 CLASSES = ("Human", "AI", "Mixed")
 
