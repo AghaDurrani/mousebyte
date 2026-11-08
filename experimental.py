@@ -89,3 +89,25 @@ def predict_experimental(text, resources):
             "share_probabilities": share_probabilities.tolist(),
             "offsets": [offsets[i] for i in usable], "logits": logits[usable].tolist()}
 
+
+
+def normalize_result(result):
+    """Validate a result and recover missing token share from saved token logits."""
+    if not isinstance(result, dict) or result.get("label") not in CLASSES:
+        raise ValueError("Invalid experimental result; please check the text again.")
+    result = dict(result)
+    logits = result.get("logits")
+    offsets = result.get("offsets")
+    if not isinstance(logits, list) or not logits or not isinstance(offsets, list):
+        raise ValueError("Missing token predictions; please check the text again.")
+    if len(logits) != len(offsets) or not all(math.isfinite(z) for z in logits):
+        raise ValueError("Invalid token predictions; please check the text again.")
+    if not isinstance(result.get("text"), str):
+        raise ValueError("Missing result text.")
+    result.setdefault("valid_count", len(logits))
+    if result["valid_count"] != len(logits):
+        raise ValueError("Inconsistent token count; please check the text again.")
+    # Token-derived fraction, not the share-head probability or bucket midpoint.
+    result["ai_token_count"] = sum(z >= 0 for z in logits)
+    result["ai_share"] = result["ai_token_count"] / len(logits)
+    return result
