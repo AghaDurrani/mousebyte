@@ -6,7 +6,9 @@ import time
 import streamlit as st
 
 from predict import load_model, predict, predict_tokens, smooth_labels, highlight_tokens
-from experimental import load_experimental, predict_experimental, MODEL_REVISION, STEP
+from experimental import load_experimental, predict_experimental, MODEL_REVISION, STEP, normalize_result
+
+RESULT_VERSION = MODEL_REVISION + ":share-result-v2"
 
 st.set_page_config(page_title="Pangram · AI check", page_icon="🔎", layout="centered")
 
@@ -129,15 +131,25 @@ with experimental_tab:
         st.session_state.pop("experimental_result", None)
         try:
             with st.spinner("Reading your text…"):
-                result = predict_experimental(experimental_text, experimental_resources(MODEL_REVISION))
-                st.session_state.experimental_result = (MODEL_REVISION, result)
+                result = normalize_result(predict_experimental(experimental_text, experimental_resources(RESULT_VERSION)))
+                st.session_state.experimental_result = (RESULT_VERSION, result)
         except ValueError as error:
             st.error(str(error))
         except Exception:
             st.error("The experimental model could not load or finish. Check Hugging Face access and the app logs.")
     saved = st.session_state.get("experimental_result")
-    if saved and saved[0] == MODEL_REVISION:
-        result = saved[1]
+    if saved and saved[0] != RESULT_VERSION:
+        st.session_state.pop("experimental_result", None)
+        saved = None
+        st.info("The experimental model was updated. Please check your text again.")
+    if saved:
+        try:
+            result = normalize_result(saved[1])
+        except (ValueError, KeyError, TypeError):
+            st.session_state.pop("experimental_result", None)
+            saved = None
+            st.info("Please check your text again to refresh this result.")
+    if saved:
         st.subheader(result["label"])
         if result["label"] == "Mixed":
             ai_col, human_col = st.columns(2)
