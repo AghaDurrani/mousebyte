@@ -79,6 +79,11 @@ def clear_text():
     st.session_state.text = ""
 
 
+def clear_experimental_text():
+    st.session_state.experimental_text = ""
+    st.session_state.pop("experimental_result", None)
+
+
 @st.cache_resource(show_spinner="Loading the experimental model…")
 def experimental_resources(revision):
     token = secret("HF_TOKEN") or secret("HF_TOKEN_WRITE")
@@ -154,7 +159,11 @@ with experimental_tab:
     with st.form("experimental_check"):
         experimental_text = st.text_area("Your text", key="experimental_text",
                                          height=280, max_chars=120_000)
-        experimental_submitted = st.form_submit_button("Check text", type="primary")
+        experimental_check_col, experimental_new_col = st.columns([3, 1])
+        with experimental_check_col:
+            experimental_submitted = st.form_submit_button("Check text", type="primary", use_container_width=True)
+        with experimental_new_col:
+            st.form_submit_button("New text", on_click=clear_experimental_text, use_container_width=True)
     experimental_penalty = st.slider(
         "Highlight smoothing", min_value=0.0, max_value=10.0,
         value=2.0, step=0.25, key="experimental_smoothing",
