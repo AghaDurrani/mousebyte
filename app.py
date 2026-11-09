@@ -82,7 +82,7 @@ def clear_text():
 @st.cache_resource(show_spinner="Loading the experimental model…")
 def experimental_resources(revision):
     token = secret("HF_TOKEN") or secret("HF_TOKEN_WRITE")
-    return load_experimental(token, resources())
+    return load_experimental(token, endpoint=secret("INFERENCE_URL") or "https://uwlgpxgwluc1sd-8000.proxy.runpod.net")
 
 
 document_tab, token_tab, experimental_tab = st.tabs(["Document", "Token highlights", "Experimental"])
@@ -150,7 +150,7 @@ with token_tab:
         st.caption("Highlights show the cleaned text from your last submission. They use the existing classifier on individual tokens; they are not calibrated token probabilities.")
 
 with experimental_tab:
-    st.caption(f"Gemma 270M · share-head checkpoint {STEP}")
+    st.caption(f"Gemma 1B · GPU inference · checkpoint {STEP} · maximum 5,000 tokens")
     with st.form("experimental_check"):
         experimental_text = st.text_area("Your text", key="experimental_text",
                                          height=280, max_chars=120_000)
@@ -170,7 +170,7 @@ with experimental_tab:
         except ValueError as error:
             st.error(str(error))
         except Exception:
-            st.error("The experimental model could not load or finish. Check Hugging Face access and the app logs.")
+            st.error("The GPU could not finish this request. Check that the inference pod is running, then try again.")
     saved = st.session_state.get("experimental_result")
     if saved and saved[0] != RESULT_VERSION:
         st.session_state.pop("experimental_result", None)
@@ -198,11 +198,11 @@ with experimental_tab:
         else:
             st.markdown(highlight_pure(result), unsafe_allow_html=True)
             st.caption("Document verdict sets the colour: green = Human, red = AI. Lighter shades mean lower raw AI-token scores; darker shades mean higher scores.")
-        st.caption(f"{result['valid_count']:,} text tokens")
+        st.caption(f"{result['valid_count']:,} text tokens · GPU inference {result.get('seconds', 0):.1f}s")
         if result["valid_count"] < 64:
             st.caption("Very short passages offer limited evidence; interpret the result cautiously.")
 
 with st.expander("About this test"):
-    st.write("Gemma 3 270M · checkpoint 5000 · CPU inference · up to 16,384 tokens. Your full input is scored together; longer text is rejected rather than silently cut off. Long passages can take a while on CPU.")
+    st.write("Document and Token highlights: Gemma 3 270M, checkpoint 5000, CPU inference up to 16,384 tokens. Experimental: Gemma 3 1B, checkpoint 1560, Runpod GPU inference up to 5,000 tokens. Full inputs are scored together; longer texts are rejected rather than silently cut off. Experimental requires the inference pod to be running.")
 
 
