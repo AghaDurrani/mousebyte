@@ -5,15 +5,17 @@ import math
 import urllib.error
 import urllib.request
 
-MODEL_REVISION = "gemma1b-share-step1560-bf16-v1"
-STEP = 1560
+MODEL_REVISION = "gemma1b-share-step3600-bf16-v1"
+STEP = 3600
 MAX_TOKENS = 5000
 CLASSES = ("Human", "AI", "Mixed")
-DEFAULT_URL = "https://uwlgpxgwluc1sd-8000.proxy.runpod.net"
+DEFAULT_URL = "https://01qo679cm5jw9y-8000.proxy.runpod.net"
 
 
 def load_experimental(token, base_resources=None, endpoint=DEFAULT_URL):
     """No CPU model loading; derive a service-only credential from existing secrets."""
+    if endpoint.rstrip("/") == "https://uwlgpxgwluc1sd-8000.proxy.runpod.net":
+        endpoint = DEFAULT_URL
     if not token:
         raise ValueError("Add HF_TOKEN in Streamlit Secrets.")
     if not endpoint.startswith("https://"):
