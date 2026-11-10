@@ -156,14 +156,15 @@ with token_tab:
 
 with experimental_tab:
     st.caption(f"Gemma 1B · GPU inference · checkpoint {STEP} · maximum 5,000 tokens")
+    st.button(
+        "New text", key="experimental_new_text",
+        on_click=clear_experimental_text, use_container_width=True,
+        help="Clear your text and the previous result.",
+    )
     with st.form("experimental_check"):
         experimental_text = st.text_area("Your text", key="experimental_text",
                                          height=280, max_chars=120_000)
-        experimental_check_col, experimental_new_col = st.columns([3, 1])
-        with experimental_check_col:
-            experimental_submitted = st.form_submit_button("Check text", type="primary", use_container_width=True)
-        with experimental_new_col:
-            st.form_submit_button("New text", on_click=clear_experimental_text, use_container_width=True)
+        experimental_submitted = st.form_submit_button("Check text", type="primary", use_container_width=True)
     experimental_penalty = st.slider(
         "Highlight smoothing", min_value=0.0, max_value=10.0,
         value=2.0, step=0.25, key="experimental_smoothing",
