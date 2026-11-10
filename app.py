@@ -87,7 +87,7 @@ def clear_experimental_text():
 @st.cache_resource(show_spinner="Loading the experimental model…")
 def experimental_resources(revision):
     token = secret("HF_TOKEN") or secret("HF_TOKEN_WRITE")
-    return load_experimental(token, endpoint=secret("INFERENCE_URL") or "https://uwlgpxgwluc1sd-8000.proxy.runpod.net")
+    return load_experimental(token, endpoint=secret("INFERENCE_URL") or "https://01qo679cm5jw9y-8000.proxy.runpod.net")
 
 
 document_tab, token_tab, experimental_tab = st.tabs(["Document", "Token highlights", "Experimental"])
@@ -213,6 +213,6 @@ with experimental_tab:
             st.caption("Very short passages offer limited evidence; interpret the result cautiously.")
 
 with st.expander("About this test"):
-    st.write("Document and Token highlights: Gemma 3 270M, checkpoint 5000, CPU inference up to 16,384 tokens. Experimental: Gemma 3 1B, checkpoint 1560, Runpod GPU inference up to 5,000 tokens. Full inputs are scored together; longer texts are rejected rather than silently cut off. Experimental requires the inference pod to be running.")
+    st.write("Document and Token highlights: Gemma 3 270M, checkpoint 5000, CPU inference up to 16,384 tokens. Experimental: Gemma 3 1B, checkpoint 3600, Runpod GPU inference up to 5,000 tokens. Full inputs are scored together; longer texts are rejected rather than silently cut off. Experimental requires the inference pod to be running.")
 
 
