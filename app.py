@@ -10,7 +10,7 @@ import streamlit as st
 from predict import load_model, predict, predict_tokens, smooth_labels, highlight_tokens
 from experimental import load_experimental, predict_experimental, MODEL_REVISION, STEP, normalize_result
 
-RESULT_VERSION = MODEL_REVISION + ":share-result-v3-fpr015-over64"
+RESULT_VERSION = MODEL_REVISION + ":share-result-v4-fpr015-over64-spacing"
 
 st.set_page_config(page_title="Pangram · AI check", page_icon="🔎", layout="centered")
 
