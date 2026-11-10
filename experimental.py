@@ -28,7 +28,15 @@ def load_experimental(token, base_resources=None, endpoint=DEFAULT_URL):
     return endpoint.rstrip("/"), credential
 
 
+def normalize_input_spacing(text):
+    """Collapse empty lines; preserve words, nonempty lines and indentation."""
+    import re
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    return re.sub(r"\n(?:[ \t]*\n)+", "\n", text).strip()
+
+
 def predict_experimental(text, resources):
+    text = normalize_input_spacing(text)
     if not text.strip():
         raise ValueError("Enter some text first.")
     if len(text) > 120000:
