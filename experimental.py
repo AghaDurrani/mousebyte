@@ -8,6 +8,10 @@ import urllib.request
 MODEL_REVISION = "gemma1b-share-step3600-bf16-v1"
 STEP = 3600
 MAX_TOKENS = 5000
+# Fixed study policy, calibrated on checkpoint 3600 humans with >64 valid tokens.
+AI_THRESHOLD = 0.7730225324630738
+MIXED_THRESHOLD = 0.6775493621826173
+DECISION_VERSION = "separate-fpr015-over64-v1"
 CLASSES = ("Human", "AI", "Mixed")
 DEFAULT_URL = "https://01qo679cm5jw9y-8000.proxy.runpod.net"
 
@@ -75,4 +79,14 @@ def normalize_result(result):
     # Token-derived fraction, not the share-head probability or bucket midpoint.
     result["ai_token_count"] = sum(z >= 0 for z in logits)
     result["ai_share"] = result["ai_token_count"] / len(logits)
+    if result["valid_count"] > 64:
+        probabilities = result.get("probabilities")
+        if (not isinstance(probabilities, list) or len(probabilities) != 3
+                or not all(isinstance(p, (int, float)) and math.isfinite(p)
+                           and 0 <= p <= 1 for p in probabilities)):
+            raise ValueError("Missing or invalid document probabilities.")
+        # Order from the service: Human, AI, summed mixed buckets.
+        result["label"] = ("AI" if probabilities[1] >= AI_THRESHOLD else
+                           "Mixed" if probabilities[2] >= MIXED_THRESHOLD else "Human")
+    result["decision_version"] = DECISION_VERSION
     return result
