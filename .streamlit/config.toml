@@ -7,3 +7,7 @@ font = "sans serif"
 
 [browser]
 gatherUsageStats = false
+
+[server]
+# Avoid introspecting Transformers lazy modules and their optional vision dependencies.
+fileWatcherType = "none"
